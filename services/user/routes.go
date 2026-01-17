@@ -1,13 +1,24 @@
 package user
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/HadeedTariq/go-ecom-api/types"
+	"github.com/HadeedTariq/go-ecom-api/utils"
+	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 )
 
-type Handler struct{}
+type Handler struct {
+	store types.UserStore
+}
+
+func NewHandler(store types.UserStore) *Handler {
+	return &Handler{
+		store: store,
+	}
+}
 
 func (h *Handler) RegisterRoutes(router *mux.Router) {
 	subRouter := router.PathPrefix("/auth").Subrouter()
@@ -16,9 +27,18 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 
 // ~ so now the first thing I am gonna do is create the schema for the user
 func (h *Handler) RegsiterUser(w http.ResponseWriter, r *http.Request) {
-	// ~ so over there for registering the user certain type of validation and the data type definition is required
+	var payload types.RegisterUserPayload
+	if err := utils.ParseJson(r, &payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
 
-	var payload *types.RegisterUserPayload
+	if err := utils.Validate.Struct(payload); err != nil {
+		errors := err.(validator.ValidationErrors)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		return
+	}
 
-	// ~ so over there using the validator package I have to validate that out
+	// ~ so after validation the next step is to check that the user exist with in the database or not
+
 }
